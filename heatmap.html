@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <title>heatmap.js OpenLayers Heatmap Layer</title>
+    <style>
+        body, html {
+            margin:0;
+            padding:0;
+            font-family:Arial;
+        }
+        h1 {
+            margin-bottom:10px;
+        }
+        #main {
+            position:relative;
+            width:1020px;
+            padding:20px;
+            margin:auto;
+        }
+        #heatmapArea {
+            position:relative;
+            float:left;
+            width:800px;
+            height:600px;
+            border:1px dashed black;
+        }
+        #configArea {
+            position:relative;
+            float:left;
+            width:200px;
+            padding:15px;
+            padding-top:0;
+            padding-right:0;
+        }
+        .btn {
+            margin-top:25px;
+            padding:10px 20px 10px 20px;
+            -moz-border-radius:15px;
+            -o-border-radius:15px;
+            -webkit-border-radius:15px;
+            border-radius:15px;
+            border:2px solid black;
+            cursor:pointer;
+            color:white;
+            background-color:black;
+        }
+        #gen:hover{
+            background-color:grey;
+            color:black;
+        }
+        textarea{
+            width:260px;
+            padding:10px;
+            height:200px;
+        }
+        h2{
+            margin-top:0;
+        }
+    </style>
+    <link rel="shortcut icon" type="image/png" href="http://www.patrick-wied.at/img/favicon.png" />
+    </head>
+    <body>
+        <div id="main">
+            <h1>OpenLayers Heatmap Renderer</h1>
+            <a href="http://www.patrick-wied.at/static/heatmapjs/" title="heatmap.js">Back to the project page</a><br /><br />
+            <div id="heatmapArea">
+            </div>
+            <div id="configArea">
+                <h2>Sidenotes</h2>
+                <br /><br />
+                <br /><br />
+                <strong><a href="https://github.com/pa7/heatmap.js"></a>.</strong>
+            </div>
+            <div style="position:absolute;width:940px;top:750px;text-align:center;"><a href="http://www.patrick-wied.at/static/heatmapjs/">heatmap.js</a> by <a href="http://www.patrick-wied.at" target="_blank">Patrick Wied</a></div>
+        </div>
+        <script src="http://openlayers.org/api/OpenLayers.js"></script>
+        <script type="text/javascript" src="../../src/heatmap.js"></script>
+        <script type="text/javascript" src="../../src/heatmap-openlayers-renderer.js"></script>
+        <script type="text/javascript">
+        var map, layer, heatmap;
+
+        function init(){
+
+            var data = [{lat:-34.587500000000006, lon:-58.6725, count:600000},{lat:52.36670000000001, lon:14.066699999999997,count:300000},{lat:46.61670000000001, lon:-72.6667,count:420000},{lat:-10, lon:-55, count:600000},{lat:39, lon:22,count:60000},{lat:51.5, lon:-0.12999999999999545, count:54000},{lat:23.11670000000001, lon:113.25,count:600000},{lat:38, lon:-97, count:600000},{lat:38, lon:-97,count:600000}]
+                     var datalen = data.length,
+                features = [];
+            var sphericalMercatorProj = new OpenLayers.Projection('EPSG:900913'),
+                geographicProj = new OpenLayers.Projection('EPSG:4326');
+            while (datalen--) {
+                var g = new OpenLayers.Geometry.Point(data[datalen].lon, data[datalen].lat);
+                g.transform(geographicProj, sphericalMercatorProj);
+                features.push(
+                    new OpenLayers.Feature.Vector(g, {count: data[datalen].count})
+                );
+            }
+
+            map = new OpenLayers.Map('heatmapArea');
+            map.addControl(new OpenLayers.Control.LayerSwitcher());
+            layer = new OpenLayers.Layer.OSM();
+
+            // create our vectorial layer using heatmap renderer
+            heatmap = new OpenLayers.Layer.Vector("Heatmap Layer", {
+                opacity: 0.3,
+                renderers: ['Heatmap'],
+                strategies: [new OpenLayers.Strategy.Cluster({distance: 15})],
+                rendererOptions: {
+                    weight: function(feature) {
+                        var weight = 0,
+                            features = feature.cluster;
+                        for (var i = 0, len = features.length; i < len; i++) {
+                            weight +=  features[i].attributes.count; // `count` from data array.
+                        }
+                        return (weight ? Math.log(weight) : 0);
+                    },
+                    heatmapConfig: {
+                        radius: 10
+                    }
+                }
+            });
+            map.addLayers([layer, heatmap]);
+            // Features are added after adding the layer to the map to ensure
+            //    that the Cluster strategy is active.
+            heatmap.addFeatures(features);
+
+            map.zoomToMaxExtent();
+            map.zoomIn();
+        }
+
+        window.onload = function() {
+            init(); 
+        };
+        </script>
+    </body>
+</html>
